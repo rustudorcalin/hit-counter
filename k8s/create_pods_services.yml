@@ -10,6 +10,10 @@ spec:
       name: myapp
       ports:
         - containerPort: 5000
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "200m" 
 ---
 apiVersion: v1
 kind: Service

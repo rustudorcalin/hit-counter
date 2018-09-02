@@ -19,6 +19,10 @@ spec:
         image: calinrus/hit-counter
         ports:
         - containerPort: 5000
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "200m" 
 ---
 apiVersion: apps/v1
 kind: Deployment
