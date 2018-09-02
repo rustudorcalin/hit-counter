@@ -1,6 +1,6 @@
 version: '2'
 services:
-  web:
+  myapp:
     build: .
     ports:
      - "80:5000"

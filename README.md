@@ -18,7 +18,7 @@ The app is written in Python, using Flask framework
  - `requirements.txt` are the dependencies required to run the app
  - `Dockerfile` is used to build docker container
  
- ### Deployment steps
+ ### Building/testing steps
 
 Download/pull this repository:
 `git clone https://github.com/rustudorcalin/hit-counter.git`
@@ -52,6 +52,7 @@ Build and tag your docker image
 Make sure to push the image to docker hub:
 
     $ docker tag hit-counter calinrus/hit-counter
+    
     $ docker push calinrus/hit-counter
     The push refers to a repository [docker.io/calinrus/hit-counter]
     898d7f171bf4: Pushed 
@@ -83,6 +84,7 @@ You can test your application and its dependency (Redis) using docker-compose.
     Creating network "docker_default" with the default driver
     Creating docker_redis-lb_1
     Creating docker_web_1
+    
     $ docker-compose ps
     Name                     Command               State          Ports        
     ---------------------------------------------------------------------------------
@@ -91,7 +93,74 @@ You can test your application and its dependency (Redis) using docker-compose.
     
     $ curl localhost
     I have been hit 1 times since deployment.
+    
     $ curl localhost
     I have been hit 2 times since deployment.
+    
     $ curl localhost
     I have been hit 3 times since deployment.
+
+ ### Deployment steps
+I have tested this on Google Kubernetes Engine. Let's check that we have the cluster available:
+    
+    $ kubectl get all
+    NAME                 TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+    service/kubernetes   ClusterIP   10.39.240.1   <none>        443/TCP   14m
+    
+    $ kubectl get nodes
+    NAME                                       STATUS    ROLES     AGE       VERSION
+    gke-cluster-1-default-pool-8fd182f9-2vtv   Ready     <none>    13m       v1.9.7-gke.6
+    gke-cluster-1-default-pool-8fd182f9-bxw7   Ready     <none>    13m       v1.9.7-gke.6
+    gke-cluster-1-default-pool-8fd182f9-qgq9   Ready     <none>    13m       v1.9.7-gke.6
+ 
+ In order to create Pods and Services we need to execute the `kubectl apply` command:
+     
+    $ cd k8s
+    
+    $ kubectl apply -f create_pods_service.yml 
+    pod/first-pod created
+    service/myapp-lb created
+    pod/second-pod created
+    service/redis-lb created
+   
+ Now check the resources and get the public IP of the app:
+    
+    $ kubectl get all
+    NAME             READY     STATUS    RESTARTS   AGE
+    pod/first-pod    1/1       Running   0          1m
+    pod/second-pod   1/1       Running   0          1m
+
+    NAME                 TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)        AGE
+    service/kubernetes   ClusterIP      10.39.240.1     <none>           443/TCP        16m
+    service/myapp-lb     LoadBalancer   10.39.247.151   35.204.171.197   80:30945/TCP   1m
+    service/redis-lb     ClusterIP      10.39.253.185   <none>           6379/TCP       1m
+
+Let's test our application hiting the public IP address:
+
+    $ curl 35.204.171.197
+    I have been hit 1 times since deployment.
+    
+    $ curl 35.204.171.197
+    I have been hit 2 times since deployment.
+    
+    $ curl 35.204.171.197
+    I have been hit 3 times since deployment.
+
+# Cleanup
+To do some cleanup, run the following commands:
+
+    $ kubectl delete service myapp-lb
+    service "myapp-lb" deleted
+    
+    $ kubectl delete service redis-lb
+    service "redis-lb" deleted
+    
+    $ kubectl delete pods first-pod
+    pod "first-pod" deleted
+    
+    $ kubectl delete pods second-pod
+    pod "second-pod" deleted
+    
+    $ kubectl get all
+    NAME                 TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+    service/kubernetes   ClusterIP   10.39.240.1   <none>        443/TCP   18m
