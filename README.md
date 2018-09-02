@@ -19,7 +19,6 @@ The app is written in Python, using Flask framework
  - `Dockerfile` is used to build docker container
  
  ### Deployment steps
-**I have tested this on Google Kubernetes Engine**
 
 Download/pull this repository:
 `git clone https://github.com/rustudorcalin/hit-counter.git`
@@ -64,3 +63,35 @@ Make sure to push the image to docker hub:
     00023a62e045: Layer already exists 
     73046094a9b8: Layer already exists 
     latest: digest: sha256:b2cc2202c58c182daa399016716b679d5a0b36e402ad21149ebb09472f908383 size: 1993
+
+You can test your application and its dependency (Redis) using docker-compose.
+
+    $ docker-compose ps
+    Name   Command   State   Ports
+    ------------------------------
+    
+    $ docker-compose up -d
+    WARNING: The Docker Engine you're using is running in swarm mode.
+
+    Compose does not use swarm mode to deploy services to multiple nodes in a swarm. All containers will be scheduled on the current node.
+
+    To deploy your application across the swarm, use the bundle feature of the Docker experimental build.
+
+    More info:
+    https://docs.docker.com/compose/bundles
+
+    Creating network "docker_default" with the default driver
+    Creating docker_redis-lb_1
+    Creating docker_web_1
+    $ docker-compose ps
+    Name                     Command               State          Ports        
+    ---------------------------------------------------------------------------------
+    docker_redis-lb_1   docker-entrypoint.sh redis ...   Up      6379/tcp            
+    docker_web_1        python ./app.py                  Up      0.0.0.0:80->5000/tcp
+    
+    $ curl localhost
+    I have been hit 1 times since deployment.
+    $ curl localhost
+    I have been hit 2 times since deployment.
+    $ curl localhost
+    I have been hit 3 times since deployment.
