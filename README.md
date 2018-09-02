@@ -113,6 +113,7 @@ I have tested this on Google Kubernetes Engine. Let's check that we have the clu
     gke-cluster-1-default-pool-8fd182f9-bxw7   Ready     <none>    13m       v1.9.7-gke.6
     gke-cluster-1-default-pool-8fd182f9-qgq9   Ready     <none>    13m       v1.9.7-gke.6
  
+ #### 1. Manually creating pods
  In order to create Pods and Services we need to execute the `kubectl apply` command:
      
     $ cd k8s
@@ -146,7 +147,7 @@ Let's test our application hiting the public IP address:
     $ curl 35.204.171.197
     I have been hit 3 times since deployment.
 
-# Cleanup
+#### Cleanup
 To do some cleanup, run the following commands:
 
     $ kubectl delete service myapp-lb
@@ -164,3 +165,54 @@ To do some cleanup, run the following commands:
     $ kubectl get all
     NAME                 TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
     service/kubernetes   ClusterIP   10.39.240.1   <none>        443/TCP   18m
+
+#### 2. Using a _Deployment_ controller
+To create a Deployment, run the following command:
+    
+    $ cd k8s
+    
+    $ kubectl create -f deployment.yml 
+    deployment.apps/myapp-deployment created
+    deployment.apps/redis-deployment created
+
+    $ kubectl get deployments
+    NAME               DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+    myapp-deployment   3         3         3            3           59s
+    redis-deployment   1         1         1            1           59s
+    
+We still need to create a _Service_ in order for our app to communicate with Redis and outside world.
+
+    $ kubectl create -f services.yml 
+    service/myapp-lb created
+    service/redis-lb created
+    
+    $ kubectl get services
+    NAME         TYPE           CLUSTER-IP      EXTERNAL-IP      PORT(S)        AGE
+    kubernetes   ClusterIP      10.39.240.1     <none>           443/TCP        41m
+    myapp-lb     LoadBalancer   10.39.250.243   35.204.129.161   80:30128/TCP   1m
+    redis-lb     ClusterIP      10.39.246.222   <none>           6379/TCP       1m
+    
+Test the Deployment:
+
+    $ curl 35.204.129.161
+    I have been hit 17 times since deployment.
+   
+#### Cleanup
+To do some cleanup, run the following commands:
+
+    $ kubectl delete deployment myapp-deployment
+    deployment.extensions "myapp-deployment" deleted
+    $ kubectl delete deployment redis-depoyment
+    deployment.extensions "redis-deployment" deleted
+    
+    $ kubectl get deployments
+    No resources found.
+    
+    $ kubectl delete service myapp-lb
+    service "myapp-lb" deleted
+    $ kubectl delete service redis-lb
+    service "redis-lb" deleted
+    
+    $ kubectl get services
+    NAME         TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+    kubernetes   ClusterIP   10.39.240.1   <none>        443/TCP   46m
